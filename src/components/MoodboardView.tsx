@@ -1,341 +1,315 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Heart, Search, Filter, Sliders, ExternalLink, Download, Check, Eye, X, AlertCircle } from 'lucide-react';
-import { RenderItem } from '../types';
+import React, { useState } from 'react';
+import { Project, MoodboardItem } from '../types';
+import { Plus, Trash2, Heart, Sparkles, Image as ImageIcon, Check, RefreshCw, X } from 'lucide-react';
 
 interface MoodboardViewProps {
-  renders: RenderItem[];
-  onToggleLike: (renderId: string) => void;
-  onOpenAiDesigner: () => void;
+  projects: Project[];
+  activeProjectId: string;
+  onSelectProject: (id: string) => void;
+  moodboardItems: MoodboardItem[];
+  onAddMoodboardItem: (item: Omit<MoodboardItem, 'id'>) => void;
+  onDeleteMoodboardItem: (id: string) => void;
 }
 
-// Normalise helper for Persian/Arabic
-const normaliseText = (str: string) => {
-  if (!str) return '';
-  return str
-    .toLowerCase()
-    .replace(/ي/g, 'ی')
-    .replace(/ك/g, 'ک')
-    .replace(/ة/g, 'ه')
-    .replace(/آ/g, 'ا')
-    .trim();
-};
+const sampleImages = [
+  { label: 'فضای کاری مدرن', url: '/__l5e/assets-v1/37676bb5-fabf-42e6-97a0-a98cdbd1de16/prototype-workplace.jpg' },
+  { label: 'محیط مسکونی', url: '/__l5e/assets-v1/223c68d9-64db-4c3c-a572-34b853d2ec54/prototype-commerce.jpg' },
+  { label: 'طبیعت و چوب', url: '/__l5e/assets-v1/68ceadfc-b580-4f18-8679-0088dddd218c/prototype-travel.jpg' },
+  { label: 'دیزاین غذاخوری', url: '/__l5e/assets-v1/ee055612-0d60-456e-b148-d6c54a724bcf/prototype-food.jpg' },
+];
 
-export const MoodboardView: React.FC<MoodboardViewProps> = ({ renders, onToggleLike, onOpenAiDesigner }) => {
-  const [selectedStyle, setSelectedStyle] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
-  const [compareMode, setCompareMode] = useState<boolean>(false);
-  const [compareIds, setCompareIds] = useState<string[]>([]);
-  const [activeModalRender, setActiveModalRender] = useState<RenderItem | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
+export const MoodboardView: React.FC<MoodboardViewProps> = ({
+  projects,
+  activeProjectId,
+  onSelectProject,
+  moodboardItems,
+  onAddMoodboardItem,
+  onDeleteMoodboardItem,
+}) => {
+  const [selectedTag, setSelectedTag] = useState<string>('all');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const [tag, setTag] = useState('معماری داخلی');
+  const [imageUrl, setImageUrl] = useState('/__l5e/assets-v1/37676bb5-fabf-42e6-97a0-a98cdbd1de16/prototype-workplace.jpg');
+  const [colorHex, setColorHex] = useState('#8C6D53');
+  const [notes, setNotes] = useState('');
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 250);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  const currentProject = projects.find(p => p.id === activeProjectId) || projects[0];
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (activeModalRender) setActiveModalRender(null);
-        if (compareMode && compareIds.length > 0) setCompareIds([]);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeModalRender, compareMode, compareIds]);
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3000);
-  };
-
-  const styles = ['all', 'مدرن گرم ایرانی', 'مینیمال گرم با مصالح بومی', 'صنعتی ایرانی', 'سنتی معاصر'];
-
-  const filteredRenders = renders.filter(r => {
-    const matchesStyle = selectedStyle === 'all' || r.style.includes(selectedStyle) || selectedStyle.includes(r.style);
-    const norm = normaliseText(debouncedSearch);
-    const matchesSearch = !norm || normaliseText(r.title).includes(norm) || normaliseText(r.prompt).includes(norm);
-    return matchesStyle && matchesSearch;
+  const filteredItems = moodboardItems.filter(item => {
+    if (selectedTag === 'all') return true;
+    return item.tag === selectedTag;
   });
 
-  const toggleCompareSelect = (id: string) => {
-    if (compareIds.includes(id)) {
-      setCompareIds(compareIds.filter(i => i !== id));
-    } else {
-      if (compareIds.length >= 2) {
-        setCompareIds([compareIds[1], id]);
-      } else {
-        setCompareIds([...compareIds, id]);
-      }
-    }
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onAddMoodboardItem({
+      projectId: currentProject?.id || '1',
+      title,
+      tag,
+      imageUrl,
+      colorHex,
+      notes,
+    });
+    setTitle('');
+    setNotes('');
+    setIsAddModalOpen(false);
   };
 
   return (
-    <div className="space-y-8 pb-16">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed bottom-6 start-6 z-50 bg-stone-900 text-white px-4 py-3 rounded-2xl shadow-xl text-sm flex items-center gap-2 animate-bounce">
-          <Check className="w-4 h-4 text-amber-400" />
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-semibold">
-            <Sparkles className="w-4 h-4 text-amber-700" />
-            <span>گالری الهام و رندرهای هوش مصنوعی</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900">مادبورد و رندرهای معماری ایرانی</h1>
-          <p className="text-sm text-stone-500">مجموعه تصاویر تولید شده با هوش مصنوعی معماریا الهام گرفته از معماری اصیل ایرانی</p>
+    <div className="space-y-6 pb-12" dir="rtl">
+      {/* Header & Project Selector */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">موس‌بورد تخصصی طراحی</h1>
+          <p className="text-sm text-stone-500 mt-1">
+            ترکیب رنگ‌ها، بافت‌ها و تصاویر الهام‌بخش پروژه {currentProject?.title}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <select
+            value={activeProjectId}
+            onChange={(e) => onSelectProject(e.target.value)}
+            aria-label="انتخاب پروژه"
+            className="px-4 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-600"
+          >
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.title} ({p.clientName})</option>
+            ))}
+          </select>
+
           <button
-            onClick={() => {
-              setCompareMode(!compareMode);
-              if (compareMode) setCompareIds([]);
-            }}
-            className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 ${
-              compareMode ? 'bg-amber-600 text-white shadow-md' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>افزودن الهام‌بخش</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Filter Tags */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2">
+        {['all', 'متریال', 'رنگ و پالت', 'نورپردازی', 'مبلمان'].map(t => (
+          <button
+            key={t}
+            onClick={() => setSelectedTag(t)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap ${
+              selectedTag === t
+                .replace('all', 'all')
+                .replace('متریال', 'متریال')
+                .replace('رنگ و پالت', 'رنگ و پالت')
+                .replace('نورپردازی', 'نورپردازی')
+                .replace('مبلمان', 'مبلمان') && (selectedTag === t)
+                ? 'bg-stone-900 text-white shadow-sm'
+                : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
             }`}
           >
-            <Sliders className="w-4 h-4" />
-            <span>{compareMode ? 'خروج از مقایسه' : 'مقایسه رندرها'}</span>
+            {t === 'all' ? 'همه موارد' : t}
           </button>
-          
-          <button
-            onClick={onOpenAiDesigner}
-            className="px-5 py-3 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs flex items-center gap-2 shadow-md transition-all"
-          >
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>رندر جدید با هوش مصنوعی</span>
-          </button>
-        </div>
+        ))}
       </div>
 
-      {/* Search & Style Filter */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-white p-4 sm:p-6 rounded-3xl border border-stone-200">
-        <div className="relative flex-1">
-          <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
-          <input
-            type="text"
-            placeholder="جستجوی عنوان رندر یا پرامپت (با تطبیق حروف فارسی)..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full ps-12 pe-4 py-3 rounded-2xl bg-stone-50 border border-stone-200 text-sm focus:outline-none focus:border-amber-500 focus:bg-white transition-all text-stone-900 placeholder:text-stone-400"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
-          <Filter className="w-4 h-4 text-stone-400 shrink-0 ms-1 me-2 hidden sm:block" />
-          {styles.map(sty => (
-            <button
-              key={sty}
-              onClick={() => setSelectedStyle(sty)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                selectedStyle === sty ? 'bg-amber-600 text-white shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-              }`}
-            >
-              {sty === 'all' ? 'همه سبک‌ها' : sty}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Compare Notice */}
-      {compareMode && (
-        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center justify-between text-amber-900 text-xs font-bold">
-          <span>لطفاً دو رندر را برای مقایسه کنار هم انتخاب کنید ({compareIds.length}/2)</span>
-          {compareIds.length === 2 && (
-            <span className="bg-amber-600 text-white px-3 py-1 rounded-xl">آماده مقایسه جانبی</span>
-          )}
-        </div>
-      )}
-
-      {/* Renders Grid */}
-      {filteredRenders.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-stone-200 space-y-4">
-          <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto text-stone-400">
+      {/* Grid */}
+      {filteredItems.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-3xl border border-stone-200 p-8 space-y-4">
+          <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-700">
             <Sparkles className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold text-stone-800">رندری یافت نشد</h3>
-          <p className="text-sm text-stone-500 max-w-sm mx-auto">با عبارت جستجو یا سبک انتخابی رندری مطابقت نداشت.</p>
+          <h3 className="text-lg font-bold text-stone-900">موردی در این دسته یافت نشد</h3>
+          <p className="text-sm text-stone-500 max-w-md mx-auto">
+            می‌توانید تصاویر، رنگ‌ها و متریال‌های الهام‌بخش جدیدی به موس‌بورد پروژه اضافه کنید.
+          </p>
           <button
-            onClick={() => { setSelectedStyle('all'); setSearchQuery(''); }}
-            className="px-5 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm"
+            onClick={() => setIsAddModalOpen(true)}
+            className="px-5 py-2.5 bg-amber-700 text-white font-medium rounded-xl hover:bg-amber-800 transition"
           >
-            مشاهده همه رندرها
+            افزودن آیتم جدید
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredRenders.map(render => {
-            const isSelectedForCompare = compareIds.includes(render.id);
-            return (
-              <div 
-                key={render.id}
-                className={`bg-white rounded-3xl border overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between ${
-                  isSelectedForCompare ? 'border-amber-500 ring-2 ring-amber-400/50' : 'border-stone-200'
-                }`}
-              >
-                <div className="relative aspect-video bg-stone-100 overflow-hidden group">
-                  <img 
-                    src={render.imageUrl} 
-                    alt={render.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          {filteredItems.map(item => (
+            <div 
+              key={item.id}
+              className="bg-white rounded-3xl overflow-hidden border border-stone-200 shadow-sm hover:shadow-md transition group flex flex-col"
+            >
+              <div className="relative h-56 overflow-hidden bg-stone-100">
+                <img 
+                  src={item.imageUrl} 
+                  alt={item.title} 
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                />
+                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full font-medium">
+                  {item.tag}
+                </div>
+                {item.colorHex && (
+                  <div 
+                    className="absolute bottom-3 left-3 w-8 h-8 rounded-full border-2 border-white shadow-md"
+                    style={{ backgroundColor: item.colorHex }}
+                    title={`کد رنگ: ${item.colorHex}`}
                   />
-                  
-                  <div className="absolute top-3 start-3">
-                    <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-bold border border-white/20">
-                      {render.quality}
-                    </span>
-                  </div>
+                )}
+              </div>
 
-                  {compareMode ? (
-                    <button
-                      onClick={() => toggleCompareSelect(render.id)}
-                      className={`absolute top-3 end-3 px-3 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md transition-all flex items-center gap-1.5 ${
-                        isSelectedForCompare ? 'bg-amber-600 text-white' : 'bg-white/80 hover:bg-white text-stone-800'
-                      }`}
-                    >
-                      <Check className={`w-3.5 h-3.5 ${isSelectedForCompare ? 'opacity-100' : 'opacity-0'}`} />
-                      <span>{isSelectedForCompare ? 'انتخاب شده' : 'انتخاب مقایسه'}</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        onToggleLike(render.id);
-                        showToast('وضعیت پسندیدن رندر به‌روز شد.');
-                      }}
-                      className={`absolute top-3 end-3 w-9 h-9 rounded-xl backdrop-blur-md flex items-center justify-center transition-all ${
-                        render.likes > 0 ? 'bg-rose-500 text-white' : 'bg-black/40 text-white hover:bg-black/60'
-                      }`}
-                      aria-label="پسندیدن"
-                    >
-                      <Heart className="w-4 h-4 fill-current" />
-                    </button>
+              <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                <div className="space-y-1">
+                  <h3 className="font-bold text-stone-900 text-lg">{item.title}</h3>
+                  {item.notes && (
+                    <p className="text-xs text-stone-500 leading-relaxed line-clamp-2">{item.notes}</p>
                   )}
                 </div>
 
-                <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-stone-400">
-                      <span className="text-amber-700 font-semibold">{render.style}</span>
-                      <span>{render.date}</span>
-                    </div>
-                    <h3 className="font-extrabold text-stone-900 text-lg">{render.title}</h3>
-                    <p className="text-xs text-stone-500 line-clamp-2 bg-stone-50 p-3 rounded-xl border border-stone-100">
-                      «{render.prompt}»
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between pt-3 border-t border-stone-100">
+                  <span className="text-xs text-stone-400 font-mono">شناسه: {item.id}</span>
+                  <button
+                    onClick={() => onDeleteMoodboardItem(item.id)}
+                    className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
+                    title="حذف از موس‌بورد"
+                    aria-label="حذف از موس‌بورد"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-                  <div className="pt-4 border-t border-stone-100 flex items-center justify-between">
-                    <button
-                      onClick={() => setActiveModalRender(render)}
-                      className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
-                    >
-                      <Eye className="w-4 h-4" />
-                      <span>مشاهده در اندازه کامل</span>
-                    </button>
+      {/* Add Modal */}
+      {isAddModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setIsAddModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in duration-200"
+            onClick={e => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="افزودن آیتم جدید به موس‌بورد"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+                  <ImageIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-stone-900">افزودن آیتم جدید به موس‌بورد</h3>
+                  <p className="text-xs text-stone-500">تصویر، پالت رنگی یا ایده طراحی جدید</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-2 text-stone-400 hover:text-stone-700 rounded-xl hover:bg-stone-100"
+                aria-label="بستن"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-stone-700">عنوان آیتم <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="مثال: سنگ مرمریت مهجام"
+                  className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-600 text-stone-900"
+                  required
+                  autoFocus
+                  maxLength={60}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-stone-700">دسته‌بندی</label>
+                  <select
+                    value={tag}
+                    onChange={e => setTag(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-600 text-stone-900"
+                  >
+                    <option value="معماری داخلی">معماری داخلی</option>
+                    <option value="متریال">متریال</option>
+                    <option value="رنگ و پالت">رنگ و پالت</option>
+                    <option value="نورپردازی">نورپردازی</option>
+                    <option value="مبلمان">مبلمان</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-stone-700">رنگ شاخص</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={colorHex}
+                      onChange={e => setColorHex(e.target.value)}
+                      className="w-10 h-10 rounded-xl cursor-pointer border border-stone-200 p-0.5 bg-stone-50"
+                    />
+                    <input
+                      type="text"
+                      value={colorHex}
+                      onChange={e => setColorHex(e.target.value)}
+                      className="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-mono uppercase text-stone-900"
+                    />
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
 
-      {/* Compare Modal side-by-side if 2 selected */}
-      {compareMode && compareIds.length === 2 && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-stone-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-extrabold text-stone-900">مقایسه دو رندر معماری</h2>
-              <button
-                onClick={() => setCompareIds([])}
-                className="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-700"
-                aria-label="بستن"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {compareIds.map(id => {
-                const item = renders.find(r => r.id === id);
-                if (!item) return null;
-                return (
-                  <div key={item.id} className="space-y-4 bg-stone-50 p-4 rounded-2xl border border-stone-200">
-                    <img src={item.imageUrl} alt={item.title} className="w-full aspect-video object-cover rounded-xl" />
-                    <div className="space-y-1">
-                      <span className="text-xs font-bold text-amber-700">{item.style}</span>
-                      <h4 className="font-extrabold text-stone-900 text-base">{item.title}</h4>
-                      <p className="text-xs text-stone-500">{item.prompt}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex justify-end pt-4">
-              <button
-                onClick={() => setCompareIds([])}
-                className="px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-xs"
-              >
-                بستن مقایسه
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Single Full View Modal */}
-      {activeModalRender && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setActiveModalRender(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="مشاهده رندر"
-        >
-          <div 
-            className="bg-white rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl border border-stone-200 flex flex-col max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="relative aspect-video bg-black">
-              <img src={activeModalRender.imageUrl} alt={activeModalRender.title} className="w-full h-full object-contain" />
-              <button
-                onClick={() => setActiveModalRender(null)}
-                className="absolute top-4 start-4 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 backdrop-blur-md transition-all"
-                aria-label="بستن"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 sm:p-8 space-y-4 overflow-y-auto">
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-amber-700">{activeModalRender.style}</span>
-                <h2 className="text-2xl font-extrabold text-stone-900">{activeModalRender.title}</h2>
-              </div>
-              
-              <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 space-y-2">
-                <span className="text-xs font-bold text-stone-500">پرامپت هوش مصنوعی:</span>
-                <p className="text-sm text-stone-700">«{activeModalRender.prompt}»</p>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-stone-700">انتخاب تصویر نمونه</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {sampleImages.map((img, idx) => (
+                    <button
+                      type="button"
+                      key={idx}
+                      onClick={() => setImageUrl(img.url)}
+                      className={`flex items-center gap-2 p-2 rounded-xl border text-right transition text-xs ${
+                        imageUrl === img.url
+                          ? 'border-amber-600 bg-amber-50/50 text-amber-900 font-semibold'
+                          : 'border-stone-200 hover:bg-stone-50 text-stone-700'
+                      }`}
+                    >
+                      <img src={img.url} alt={img.label} className="w-8 h-8 rounded-lg object-cover" />
+                      <span className="truncate">{img.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex items-center justify-end pt-4 border-t border-stone-100">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-stone-700">توضیحات و ایده طراحی</label>
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="توضیحات کوتاه درباره کاربرد این متریال یا رنگ در پروژه..."
+                  rows={3}
+                  maxLength={200}
+                  className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-600 text-stone-900 resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
                 <button
-                  onClick={() => setActiveModalRender(null)}
-                  className="px-6 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs"
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-5 py-2.5 border border-stone-200 text-stone-700 hover:bg-stone-100 rounded-xl text-sm font-medium transition"
                 >
-                  بستن
+                  انصراف
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-sm font-medium transition shadow-sm"
+                >
+                  ثبت در موس‌بورد
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

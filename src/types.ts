@@ -42,3 +42,13 @@ export interface RenderItem {
   prompt: string;
   quality: 'HD' | '4K' | 'Draft';
 }
+
+export interface MoodboardItem {
+  id: string;
+  projectId: string;
+  title: string;
+  tag: string;
+  imageUrl: string;
+  colorHex: string;
+  notes?: string;
+}
