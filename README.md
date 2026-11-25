@@ -1,2 +1,8 @@
-# archflow-ai-interior-design-1894e16c
-Archflow AI Interior Design — built with Sorkh.app
+# Archflow AI Interior Design
+
+Built with Sorkh.app Make.
+
+```
+npm install
+npm run dev
+```
