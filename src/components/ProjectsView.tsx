@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Layout, Plus, Search, Filter, Trash2, Eye, Calendar, 
+  Plus, Search, Filter, Trash2, Eye, Calendar, 
   DollarSign, User, Sparkles, CheckCircle2, AlertCircle, X, Check 
 } from 'lucide-react';
 import { Project, MaterialItem } from '../types';
@@ -13,7 +13,6 @@ interface ProjectsViewProps {
   onOpenNewProjectModal: () => void;
 }
 
-// Normalise helper for Persian/Arabic
 const normaliseText = (str: string) => {
   if (!str) return '';
   return str
@@ -85,7 +84,6 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
   return (
     <div className="space-y-8 pb-16">
-      {/* Toast Notification */}
       {toastMsg && (
         <div className="fixed bottom-6 start-6 z-50 bg-stone-900 text-white px-4 py-3 rounded-2xl shadow-xl text-sm flex items-center gap-2 animate-bounce">
           <Check className="w-4 h-4 text-amber-400" />
@@ -94,140 +92,142 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       )}
 
       {/* Header */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-semibold">
-            <Layout className="w-4 h-4 text-amber-700" />
-            <span>مدیریت پروژه‌های معماری</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900">پروژه‌های بازسازی و طراحی داخلی</h1>
-          <p className="text-sm text-stone-500">لیست پروژه‌های فعال با متریال‌های انتخابی، بودجه و وضعیت پیشرفت</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">مدیریت پروژه‌های طراحی داخلی</h1>
+          <p className="text-sm text-stone-500 mt-1">لیست جامع پروژه‌ها، وضعیت پیشرفت و دسترسی به جزئیات مالی و متریال</p>
         </div>
         <button
           onClick={onOpenNewProjectModal}
-          className="px-5 py-3 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs flex items-center gap-2 shadow-md transition-all"
+          className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-600 text-white font-medium hover:bg-amber-700 shadow-lg shadow-amber-600/20 transition-all active:scale-95"
         >
-          <Plus className="w-4 h-4 text-amber-400" />
-          <span>ثبت پروژه جدید</span>
+          <Plus className="w-5 h-5" />
+          <span>پروژه جدید</span>
         </button>
       </div>
 
-      {/* Search & Status Filter */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-white p-4 sm:p-6 rounded-3xl border border-stone-200">
-        <div className="relative flex-1">
-          <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white p-4 rounded-3xl border border-stone-200 shadow-sm">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
           <input
             type="text"
-            placeholder="جستجوی نام پروژه، مشتری یا سبک (با تطبیق حروف فارسی)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full ps-12 pe-4 py-3 rounded-2xl bg-stone-50 border border-stone-200 text-sm focus:outline-none focus:border-amber-500 focus:bg-white transition-all text-stone-900 placeholder:text-stone-400"
+            placeholder="جستجوی پروژه، کارفرما یا سبک..."
+            className="w-full ps-10 pe-4 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-all"
           />
         </div>
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
-          <Filter className="w-4 h-4 text-stone-400 shrink-0 ms-1 me-2 hidden sm:block" />
+        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+          <Filter className="w-4 h-4 text-stone-400 ms-1 hidden sm:block" />
           {[
-            { id: 'all', label: 'همه پروژه‌ها' },
+            { id: 'all', label: 'همه' },
             { id: 'active', label: 'در حال اجرا' },
             { id: 'review', label: 'در حال بررسی' },
-            { id: 'completed', label: 'تکمیل شده' },
-          ].map(st => (
+            { id: 'completed', label: 'تکمیل شده' }
+          ].map(tab => (
             <button
-              key={st.id}
-              onClick={() => setStatusFilter(st.id)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                statusFilter === st.id ? 'bg-amber-600 text-white shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+              key={tab.id}
+              onClick={() => setStatusFilter(tab.id)}
+              className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                statusFilter === tab.id
+                  ? 'bg-stone-900 text-white shadow-sm'
+                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
               }`}
             >
-              {st.label}
+              {tab.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Projects List */}
+      {/* Projects Grid / Empty State */}
       {filteredProjects.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-stone-200 space-y-4">
+        <div className="bg-white rounded-3xl border border-stone-200 p-12 text-center space-y-4">
           <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto text-stone-400">
-            <Layout className="w-8 h-8" />
+            <Search className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold text-stone-800">پروژه‌ای یافت نشد</h3>
-          <p className="text-sm text-stone-500 max-w-sm mx-auto">با فیلتر یا عبارت جستجوی فعلی موردی پیدا نشد.</p>
+          <h3 className="text-lg font-semibold text-stone-800">هیچ پروژه‌ای یافت نشد</h3>
+          <p className="text-sm text-stone-500 max-w-sm mx-auto">با عبارت جستجوی فعلی یا فیلتر انتخاب شده، موردی پیدا نشد. لطفاً فیلتر را تغییر دهید یا پروژه جدیدی ثبت کنید.</p>
           <button
-            onClick={() => { setStatusFilter('all'); setSearchQuery(''); }}
-            className="px-5 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm"
+            onClick={onOpenNewProjectModal}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-medium hover:bg-amber-700 transition-all"
           >
-            مشاهده همه پروژه‌ها
+            <Plus className="w-4 h-4" />
+            <span>افزودن پروژه جدید</span>
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map(project => (
+          {filteredProjects.map((p) => (
             <div 
-              key={project.id}
-              className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              key={p.id}
+              className="bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col group"
             >
-              <div className="relative aspect-video bg-stone-100 overflow-hidden group">
+              <div className="relative h-48 overflow-hidden bg-stone-100">
                 <img 
-                  src={project.planImage} 
-                  alt={project.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  src={p.image} 
+                  alt={p.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                 />
                 <div className="absolute top-3 start-3">
-                  {getStatusBadge(project.status)}
+                  {getStatusBadge(p.status)}
+                </div>
+                <div className="absolute top-3 end-3 bg-stone-900/60 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-xs font-medium">
+                  {p.style}
                 </div>
               </div>
 
-              <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs text-stone-400">
-                    <span className="flex items-center gap-1 font-semibold text-amber-700">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      {project.style}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {project.createdAt}
-                    </span>
+              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-bold text-stone-900 group-hover:text-amber-700 transition-colors">{p.title}</h3>
+                  <div className="flex items-center gap-2 text-xs text-stone-500">
+                    <User className="w-3.5 h-3.5 text-stone-400" />
+                    <span>کارفرما: {p.clientName}</span>
                   </div>
-
-                  <h3 className="font-extrabold text-stone-900 text-xl">{project.title}</h3>
-                  <p className="text-xs text-stone-600 line-clamp-2">{project.description}</p>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-stone-100">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-stone-500 flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-stone-400" />
-                      مشتری:
+                <div className="space-y-3 pt-4 border-t border-stone-100">
+                  <div className="flex items-center justify-between text-xs text-stone-600">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-stone-400" />
+                      <span>تحویل: {p.deadline}</span>
                     </span>
-                    <span className="font-bold text-stone-800">{project.clientName}</span>
+                    <span className="flex items-center gap-1.5 font-semibold text-stone-900">
+                      <DollarSign className="w-3.5 h-3.5 text-amber-600" />
+                      <span>{(p.budget ?? 0).toLocaleString('fa-IR')} میلیون تومان</span>
+                    </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-stone-500 flex items-center gap-1">
-                      <DollarSign className="w-3.5 h-3.5 text-stone-400" />
-                      بودجه:
-                    </span>
-                    <span className="font-bold text-amber-700">{project.budget}</span>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-medium">
+                      <span className="text-stone-500">پیشرفت فیزیکی</span>
+                      <span className="text-amber-700 font-bold">{p.progress}%</span>
+                    </div>
+                    <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-amber-600 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${p.progress}%` }}
+                      />
+                    </div>
                   </div>
+                </div>
 
-                  <div className="flex items-center gap-2 pt-2">
-                    <button
-                      onClick={() => setActiveDetailProject(project)}
-                      className="flex-1 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
-                    >
-                      <Eye className="w-4 h-4" />
-                      <span>جزئیات پروژه</span>
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirmId(project.id)}
-                      className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 transition-all"
-                      aria-label="حذف پروژه"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                <div className="flex items-center justify-between pt-4 border-t border-stone-100">
+                  <button
+                    onClick={() => setActiveDetailProject(p)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-stone-700 hover:text-amber-700 bg-stone-50 hover:bg-stone-100 px-3.5 py-2 rounded-xl transition-all"
+                  >
+                    <Eye className="w-4 h-4 text-stone-500" />
+                    <span>مشاهده جزئیات</span>
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirmId(p.id)}
+                    className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                    title="حذف پروژه"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -235,76 +235,75 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         </div>
       )}
 
-      {/* Project Detail Modal */}
+      {/* Detail Modal */}
       {activeDetailProject && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setActiveDetailProject(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="جزئیات پروژه"
-        >
-          <div 
-            className="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="relative aspect-video bg-stone-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200">
+            <div className="relative h-64 bg-stone-100">
               <img 
-                src={activeDetailProject.planImage} 
-                alt={activeDetailProject.title} 
-                className="w-full h-full object-cover"
+                src={activeDetailProject.image} 
+                alt={activeDetailProject.title}
+                className="w-full h-full object-cover" 
               />
               <button
                 onClick={() => setActiveDetailProject(null)}
-                className="absolute top-4 start-4 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 backdrop-blur-md transition-all"
-                aria-label="بستن"
+                className="absolute top-4 end-4 p-2.5 bg-stone-900/60 hover:bg-stone-900 text-white rounded-full transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
-              <div className="absolute top-4 end-4">
+              <div className="absolute bottom-4 start-4 flex items-center gap-2">
                 {getStatusBadge(activeDetailProject.status)}
+                <span className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-stone-900">
+                  {activeDetailProject.style}
+                </span>
               </div>
             </div>
 
-            <div className="p-6 sm:p-8 space-y-6 overflow-y-auto">
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-amber-700">{activeDetailProject.style}</span>
-                <h2 className="text-2xl font-extrabold text-stone-900">{activeDetailProject.title}</h2>
-                <p className="text-sm text-stone-600 leading-relaxed">{activeDetailProject.description}</p>
+            <div className="p-8 space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-stone-900">{activeDetailProject.title}</h2>
+                <p className="text-sm text-stone-500 mt-1">کارفرما: {activeDetailProject.clientName}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 bg-stone-50 p-4 rounded-2xl border border-stone-200 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 bg-stone-50 rounded-2xl border border-stone-200">
                 <div>
-                  <span className="text-stone-400 block mb-1">نام مشتری</span>
-                  <span className="font-bold text-stone-800 text-sm">{activeDetailProject.clientName}</span>
+                  <span className="text-xs text-stone-400 block">بودجه کل</span>
+                  <span className="text-sm font-bold text-stone-900 mt-0.5 block">{(activeDetailProject.budget ?? 0).toLocaleString('fa-IR')} م.ت</span>
                 </div>
                 <div>
-                  <span className="text-stone-400 block mb-1">برآورد بودجه</span>
-                  <span className="font-bold text-amber-700 text-sm">{activeDetailProject.budget}</span>
+                  <span className="text-xs text-stone-400 block">تاریخ تحویل</span>
+                  <span className="text-sm font-bold text-stone-900 mt-0.5 block">{activeDetailProject.deadline}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-400 block">پیشرفت کار</span>
+                  <span className="text-sm font-bold text-amber-600 mt-0.5 block">{activeDetailProject.progress}%</span>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <h4 className="font-bold text-stone-800 text-sm">مصالح و متریال‌های تخصیص‌یافته</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {activeDetailProject.materials?.map(mat => (
-                    <div key={mat.id} className="p-3 bg-stone-50 rounded-xl border border-stone-200 flex items-center gap-3">
-                      <img src={mat.imageUrl} alt={mat.name} className="w-10 h-10 rounded-lg object-cover" />
+                <h4 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-600" />
+                  <span>متریال‌ها و مصالح پیشنهادی</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {materials.slice(0, 4).map((m) => (
+                    <div key={m.id} className="flex items-center gap-3 p-3 rounded-2xl border border-stone-200 bg-stone-50">
+                      <img src={m.image} alt={m.name} className="w-12 h-12 rounded-xl object-cover" />
                       <div className="overflow-hidden">
-                        <span className="font-bold text-stone-800 text-xs block truncate">{mat.name}</span>
-                        <span className="text-[10px] text-stone-400">{mat.code}</span>
+                        <h5 className="text-xs font-bold text-stone-800 truncate">{m.name}</h5>
+                        <span className="text-xs text-stone-500">{m.category}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="flex items-center justify-end pt-4 border-t border-stone-100">
+              <div className="flex justify-end pt-4 border-t border-stone-100">
                 <button
                   onClick={() => setActiveDetailProject(null)}
-                  className="px-6 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs shadow-md"
+                  className="px-6 py-2.5 bg-stone-900 text-white rounded-2xl text-sm font-medium hover:bg-stone-800 transition-all"
                 >
-                  بستن پنجره
+                  بستن
                 </button>
               </div>
             </div>
@@ -312,32 +311,21 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         </div>
       )}
 
-      {/* Delete Confirmation Modal (Replaces window.confirm) */}
+      {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setDeleteConfirmId(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="تایید حذف پروژه"
-        >
-          <div 
-            className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
-              <AlertCircle className="w-7 h-7" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-6 shadow-2xl border border-stone-200 text-center">
+            <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-rose-600">
+              <AlertCircle className="w-8 h-8" />
             </div>
-
-            <div className="text-center space-y-2">
-              <h3 className="text-xl font-extrabold text-stone-900">آیا از حذف این پروژه مطمئن هستید؟</h3>
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-stone-900">آیا از حذف این پروژه اطمینان دارید؟</h3>
               <p className="text-sm text-stone-500">این عملیات غیرقابل بازگشت است و تمام اطلاعات مرتبط با آن حذف خواهد شد.</p>
             </div>
-
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => setDeleteConfirmId(null)}
-                className="flex-1 py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition-all"
+                className="flex-1 px-4 py-2.5 rounded-2xl bg-stone-100 text-stone-700 text-sm font-medium hover:bg-stone-200 transition-all"
               >
                 انصراف
               </button>
@@ -345,9 +333,9 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 onClick={() => {
                   onDeleteProject(deleteConfirmId);
                   setDeleteConfirmId(null);
-                  showToast('پروژه با موفقیت حذف شد.');
+                  showToast('پروژه با موفقیت حذف شد');
                 }}
-                className="flex-1 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition-all"
+                className="flex-1 px-4 py-2.5 rounded-2xl bg-rose-600 text-white text-sm font-medium hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20"
               >
                 تایید و حذف
               </button>
